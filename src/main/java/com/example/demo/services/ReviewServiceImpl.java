@@ -2,9 +2,11 @@ package com.example.demo.services;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gcp.vision.CloudVisionTemplate;
@@ -79,21 +81,25 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	private Map<String, String> getEmotionsData(String url) {
-		AnnotateImageResponse response =
-			    this.cloudVisionTemplate.analyzeImage(
-			        this.resourceLoader.getResource(url), Type.FACE_DETECTION);
+		return Optional.ofNullable(url)
+			.map(u -> {
+				AnnotateImageResponse response =
+					    this.cloudVisionTemplate.analyzeImage(
+					        this.resourceLoader.getResource(u), Type.FACE_DETECTION);
 
-			Map<String, String> map = new HashMap<String, String>();
-			response.getFaceAnnotationsList()
-				.stream()
-				.forEach(annotation -> {
-					 map.put("joyLikeliHood", annotation.getJoyLikelihood().toString());
-					 map.put("surpriseLikelihood", annotation.getSurpriseLikelihood().toString());
-					 map.put("sorrowLikelihood", annotation.getSorrowLikelihood().toString());
-					 map.put("angerLikeHood", annotation.getAngerLikelihood().toString());
-				});
-			
-			return map;
+					Map<String, String> map = new HashMap<String, String>();
+					response.getFaceAnnotationsList()
+						.stream()
+						.forEach(annotation -> {
+							 map.put("joyLikeliHood", annotation.getJoyLikelihood().toString());
+							 map.put("surpriseLikelihood", annotation.getSurpriseLikelihood().toString());
+							 map.put("sorrowLikelihood", annotation.getSorrowLikelihood().toString());
+							 map.put("angerLikeHood", annotation.getAngerLikelihood().toString());
+						});
+					
+					return map;
+				
+			}).orElse(Collections.emptyMap());
 	}
 
 }
