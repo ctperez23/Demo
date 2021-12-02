@@ -41,18 +41,21 @@ public class ReviewServiceImpl implements ReviewService {
 	private BusinessService businessService;
 
 	@Override
-	public List<ReviewDto> getReviewsForBusiness(String name) throws IOException {	
-		List<ReviewDto> reviewList = new ArrayList<ReviewDto>();
+	public List<Map<String, List<ReviewDto>>> getReviewsForBusiness(String name) throws IOException {	
+		List<Map<String, List<ReviewDto>>> reviewList = new ArrayList<>();
 
 		ObjectMapper mapper = new ObjectMapper();
 		businessService.getBusiness(name)
 			.stream()
-			.forEach(b -> retrieveReviews(b.getId(), reviewList, mapper));
-		
+			.forEach(b -> {
+				Map<String, List<ReviewDto>> reviews = new HashMap();
+				reviews.put(b.getName(), retrieveReviews(b.getId(), mapper));
+				reviewList.add(reviews);
+			});
 		return reviewList;
 	}
 	
-	private void retrieveReviews(String id, List<ReviewDto> reviewList, ObjectMapper mapper) {
+	private List<ReviewDto> retrieveReviews(String id, ObjectMapper mapper) {
 		id = id.replaceAll("^\"+|\"+$", ""); //remove double quotes from the start and end of id
 		String url = YelpUtility.YEP_API_URL +"/"+ id +"/reviews";
 		
@@ -63,13 +66,15 @@ public class ReviewServiceImpl implements ReviewService {
 		ResponseEntity<String> reviews = restTemplate
 				.exchange(url, HttpMethod.GET, new HttpEntity<String>("parameters", headers), String.class);
 		
+		List<ReviewDto> reviewsList = new ArrayList<>();
+		
 		try {
 			JsonNode reviewRoot = mapper.readTree(reviews.getBody());
 			reviewRoot.get("reviews").forEach(r -> {
 					try {
 						ReviewDto review = mapper.treeToValue(r, ReviewDto.class);
 						review.setEmotions(getEmotionsData(review.getUser().getImageUrl()));
-						reviewList.add(review);
+						reviewsList.add(review);
 					} catch (Exception e) {
 						throw new RuntimeException(e);
 					} 
@@ -78,6 +83,8 @@ public class ReviewServiceImpl implements ReviewService {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+		
+		return reviewsList;
 	}
 
 	private Map<String, String> getEmotionsData(String url) {

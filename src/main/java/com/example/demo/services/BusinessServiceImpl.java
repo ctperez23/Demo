@@ -23,7 +23,7 @@ public class BusinessServiceImpl implements BusinessService{
 	
 	@Override
 	public List<BusinessDto> getBusiness(String name) {
-		String searchUrl = YelpUtility.YEP_API_URL + "/search?location=\"wisconsin\"&limit=1&term=\""+name+"\"";
+		String searchUrl = YelpUtility.YEP_API_URL + "/search?location=\"wisconsin\"&limit=3&term=\""+name+"\"";
 		
 		HttpHeaders headers =  new HttpHeaders() {{
 			set( "Authorization","Bearer "+ YelpUtility.API_KEY);
